@@ -46,7 +46,11 @@ CREATE TABLE `booking` (
 
 LOCK TABLES `booking` WRITE;
 /*!40000 ALTER TABLE `booking` DISABLE KEYS */;
-INSERT INTO `booking` VALUES (1,1,1,'2026-05-20','09:00:00','10:00:00',150000.00,'dikonfirmasi','2026-05-18 10:07:38'),(2,2,1,'2026-05-20','19:00:00','20:00:00',150000.00,'pending','2026-05-18 10:07:38'),(3,3,2,'2026-05-20','16:00:00','17:00:00',130000.00,'selesai','2026-05-18 10:07:38'),(4,1,5,'2026-05-20','19:00:00','21:00:00',400000.00,'selesai','2026-05-18 10:07:38');
+INSERT INTO `booking` VALUES 
+  (1,1,1,'2026-05-20','09:00:00','10:00:00',150000.00,'dikonfirmasi','2026-05-18 10:07:38'),
+  (2,2,1,'2026-05-20','19:00:00','20:00:00',150000.00,'pending','2026-05-18 10:07:38'),
+  (3,3,2,'2026-05-20','16:00:00','17:00:00',130000.00,'selesai','2026-05-18 10:07:38'),
+  (4,1,5,'2026-05-20','19:00:00','21:00:00',400000.00,'selesai','2026-05-18 10:07:38');
 /*!40000 ALTER TABLE `booking` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -76,7 +80,13 @@ CREATE TABLE `jadwal_lapangan` (
 
 LOCK TABLES `jadwal_lapangan` WRITE;
 /*!40000 ALTER TABLE `jadwal_lapangan` DISABLE KEYS */;
-INSERT INTO `jadwal_lapangan` VALUES (1,1,'2026-05-20','08:00:00','09:00:00','kosong'),(2,1,'2026-05-20','09:00:00','10:00:00','booked'),(3,1,'2026-05-20','19:00:00','20:00:00','booked'),(4,2,'2026-05-20','16:00:00','17:00:00','booked'),(5,3,'2026-05-20','14:00:00','15:00:00','kosong'),(6,5,'2026-05-20','19:00:00','21:00:00','booked');
+INSERT INTO `jadwal_lapangan` VALUES 
+  (1,1,'2026-05-20','08:00:00','09:00:00','kosong'),
+  (2,1,'2026-05-20','09:00:00','10:00:00','booked'),
+  (3,1,'2026-05-20','19:00:00','20:00:00','booked'),
+  (4,2,'2026-05-20','16:00:00','17:00:00','booked'),
+  (5,3,'2026-05-20','14:00:00','15:00:00','kosong'),
+  (6,5,'2026-05-20','19:00:00','21:00:00','booked');
 /*!40000 ALTER TABLE `jadwal_lapangan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -105,7 +115,12 @@ CREATE TABLE `lapangan` (
 
 LOCK TABLES `lapangan` WRITE;
 /*!40000 ALTER TABLE `lapangan` DISABLE KEYS */;
-INSERT INTO `lapangan` VALUES (1,'Lapangan Futsal A (Vinyl)','Futsal','Lapangan futsal indoor menggunakan lantai vinyl standar internasional.',150000.00,'tersedia','2026-05-18 10:07:23'),(2,'Lapangan Futsal B (Rumput)','Futsal','Lapangan futsal semi-outdoor dengan rumput sintetis premium.',130000.00,'tersedia','2026-05-18 10:07:23'),(3,'Lapangan Badminton 1','Badminton','Lapangan bulu tangkis menggunakan karpet lapangan Yonex.',60000.00,'tersedia','2026-05-18 10:07:23'),(4,'Lapangan Badminton 2','Badminton','Lapangan bulu tangkis lantai kayu, pencahayaan sangat baik.',50000.00,'pemeliharaan','2026-05-18 10:07:23'),(5,'Lapangan Basket Main Court','Basket','Lapangan basket full-court kayu jati indoor dengan ring hidrolik.',200000.00,'tersedia','2026-05-18 10:07:23');
+INSERT INTO `lapangan` VALUES 
+  (1,'Lapangan Futsal A (Vinyl)','Futsal','Lapangan futsal indoor menggunakan lantai vinyl standar internasional.',150000.00,'tersedia','2026-05-18 10:07:23'),
+  (2,'Lapangan Futsal B (Rumput)','Futsal','Lapangan futsal semi-outdoor dengan rumput sintetis premium.',130000.00,'tersedia','2026-05-18 10:07:23'),
+  (3,'Lapangan Badminton 1','Badminton','Lapangan bulu tangkis menggunakan karpet lapangan Yonex.',60000.00,'tersedia','2026-05-18 10:07:23'),
+  (4,'Lapangan Badminton 2','Badminton','Lapangan bulu tangkis lantai kayu, pencahayaan sangat baik.',50000.00,'pemeliharaan','2026-05-18 10:07:23'),
+  (5,'Lapangan Basket Main Court','Basket','Lapangan basket full-court kayu jati indoor dengan ring hidrolik.',200000.00,'tersedia','2026-05-18 10:07:23');
 /*!40000 ALTER TABLE `lapangan` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -136,7 +151,11 @@ CREATE TABLE `pembayaran` (
 
 LOCK TABLES `pembayaran` WRITE;
 /*!40000 ALTER TABLE `pembayaran` DISABLE KEYS */;
-INSERT INTO `pembayaran` VALUES (1,1,150000.00,'transfer_bank','lunas','bukti_tf_001.png','2026-05-18 10:07:47'),(2,2,150000.00,'e_wallet','pending',NULL,'2026-05-18 10:07:47'),(3,3,130000.00,'transfer_bank','lunas','bukti_tf_003.png','2026-05-18 10:07:47'),(4,4,400000.00,'transfer_bank','lunas','bukti_tf_004.png','2026-05-18 10:07:47');
+INSERT INTO `pembayaran` VALUES 
+  (1,1,150000.00,'transfer_bank','lunas','bukti_tf_001.png','2026-05-18 10:07:47'),
+  (2,2,150000.00,'e_wallet','pending',NULL,'2026-05-18 10:07:47'),
+  (3,3,130000.00,'transfer_bank','lunas','bukti_tf_003.png','2026-05-18 10:07:47'),
+  (4,4,400000.00,'transfer_bank','lunas','bukti_tf_004.png','2026-05-18 10:07:47');
 /*!40000 ALTER TABLE `pembayaran` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166,7 +185,12 @@ CREATE TABLE `pengguna` (
 
 LOCK TABLES `pengguna` WRITE;
 /*!40000 ALTER TABLE `pengguna` DISABLE KEYS */;
-INSERT INTO `pengguna` VALUES (1,'Ahmad Fauzi','ahmad.fauzi@email.com','password123','081234567890','customer','2026-05-18 10:07:06'),(2,'Budi Santoso','budi.santoso@email.com','budi2026','082198765432','customer','2026-05-18 10:07:06'),(3,'Siti Aminah','siti.aminah@email.com','sitioke123','085711223344','customer','2026-05-18 10:07:06'),(4,'Andika Pratama','andika.pemilik@email.com','ownerpass','081399887766','pemilik','2026-05-18 10:07:06'),(5,'Admin Super','admin.booking@email.com','adminsecure','081122334455','admin','2026-05-18 10:07:06');
+INSERT INTO `pengguna` VALUES 
+  (1,'Ahmad Fauzi','ahmad.fauzi@email.com','password123','081234567890','customer','2026-05-18 10:07:06'),
+  (2,'Budi Santoso','budi.santoso@email.com','budi2026','082198765432','customer','2026-05-18 10:07:06'),
+  (3,'Siti Aminah','siti.aminah@email.com','sitioke123','085711223344','customer','2026-05-18 10:07:06'),
+  (4,'Andika Pratama','andika.pemilik@email.com','ownerpass','081399887766','pemilik','2026-05-18 10:07:06'),
+  (5,'Admin Super','admin.booking@email.com','adminsecure','081122334455','admin','2026-05-18 10:07:06');
 /*!40000 ALTER TABLE `pengguna` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -201,7 +225,9 @@ CREATE TABLE `ulasan` (
 
 LOCK TABLES `ulasan` WRITE;
 /*!40000 ALTER TABLE `ulasan` DISABLE KEYS */;
-INSERT INTO `ulasan` VALUES (1,3,2,3,4.5,'Lapangannya bagus dan bersih, tapi parkirannya agak sempit kalau sore.','2026-05-18 10:07:55'),(2,4,5,1,5.0,'Fasilitas ring basket mantap banget, lantai kayu empuk ga licin. Worth it!','2026-05-18 10:07:55');
+INSERT INTO `ulasan` VALUES 
+  (1,3,2,3,4.5,'Lapangannya bagus dan bersih, tapi parkirannya agak sempit kalau sore.','2026-05-18 10:07:55'),
+  (2,4,5,1,5.0,'Fasilitas ring basket mantap banget, lantai kayu empuk ga licin. Worth it!','2026-05-18 10:07:55');
 /*!40000 ALTER TABLE `ulasan` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
