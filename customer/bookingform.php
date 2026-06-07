@@ -134,7 +134,7 @@ if (isset($_POST['booking'])) {
 </head>
 <body>
 
-    <!-- Navbar -->
+// Navbar
     <nav>
         <strong>MyField</strong>
         &nbsp;|&nbsp;
@@ -151,7 +151,7 @@ if (isset($_POST['booking'])) {
 
     <h2>Booking Lapangan</h2>
 
-    <!-- Info Lapangan -->
+// Tampilkan info lapangan
     <table border="1" cellpadding="8" cellspacing="0">
         <tr><th>Nama Lapangan</th><td><?= htmlspecialchars($lapangan['nama_lapangan']) ?></td></tr>
         <tr><th>Jenis Olahraga</th><td><?= htmlspecialchars($lapangan['jenis_olahraga']) ?></td></tr>
@@ -165,7 +165,7 @@ if (isset($_POST['booking'])) {
         <p style="color:red;"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
-    <!-- Form pilih tanggal dulu -->
+// Form booking
     <h3>1. Pilih Tanggal</h3>
     <form method="GET">
         <input type="hidden" name="id" value="<?= $id_lapangan ?>">
@@ -175,7 +175,7 @@ if (isset($_POST['booking'])) {
         <button type="submit">Lihat Slot Tersedia</button>
     </form>
 
-    <!-- Slot jam — muncul setelah tanggal dipilih -->
+// Tampilkan slot jika tanggal sudah dipilih
     <?php if (!empty($tanggal_dipilih)): ?>
         <br>
         <h3>2. Pilih Slot Waktu — <?= htmlspecialchars($tanggal_dipilih) ?></h3>

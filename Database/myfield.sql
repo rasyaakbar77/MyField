@@ -115,7 +115,7 @@ CREATE TABLE `lapangan` (
 
 LOCK TABLES `lapangan` WRITE;
 /*!40000 ALTER TABLE `lapangan` DISABLE KEYS */;
-INSERT INTO `lapangan` VALUES 
+INSERT INTO `lapangan` VALUES  
   (1,'Lapangan Futsal A (Vinyl)','Futsal','Lapangan futsal indoor menggunakan lantai vinyl standar internasional.',150000.00,'tersedia','2026-05-18 10:07:23'),
   (2,'Lapangan Futsal B (Rumput)','Futsal','Lapangan futsal semi-outdoor dengan rumput sintetis premium.',130000.00,'tersedia','2026-05-18 10:07:23'),
   (3,'Lapangan Badminton 1','Badminton','Lapangan bulu tangkis menggunakan karpet lapangan Yonex.',60000.00,'tersedia','2026-05-18 10:07:23'),
@@ -131,7 +131,7 @@ UNLOCK TABLES;
 DROP TABLE IF EXISTS `pembayaran`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `pembayaran` (
+CREATE TABLE `pembayaran` ( 
   `id_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
   `id_booking` int(11) NOT NULL,
   `jumlah_bayar` decimal(10,2) NOT NULL,

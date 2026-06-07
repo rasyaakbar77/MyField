@@ -210,7 +210,7 @@ if (isset($_SESSION['gagal'])) {
     </head>
     <body>
 
-        <!-- Navbar -->
+// Navbar
         <nav>
             <strong>MyField</strong>
             &nbsp;|&nbsp;
@@ -225,17 +225,17 @@ if (isset($_SESSION['gagal'])) {
 
         <h1>Riwayat Booking Anda</h1>
 
-        <!-- Tampilkan pesan sukses jika ada -->
+// Tampilkan pesan sukses jika ada
         <?php if ($pesan_sukses): ?>
             <div style="color: green;"><?= htmlspecialchars($pesan_sukses) ?></div>
         <?php endif; ?>
 
-        <!-- Tampilkan pesan gagal jika ada -->
+// Tampilkan pesan gagal jika ada
         <?php if ($pesan_gagal): ?>
             <div style="color: red;"><?= htmlspecialchars($pesan_gagal) ?></div>
         <?php endif; ?>
 
-        <!-- Tabel riwayat booking -->
+// Tampilkan tabel riwayat booking
         <table border="1" cellpadding="10" cellspacing="0">
             <thead>
                 <tr>

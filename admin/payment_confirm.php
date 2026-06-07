@@ -24,8 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['aksi_terima'])) {
 
         // --- AKSI TERIMA (Approve) ---
-        // Update status booking menjadi 'Lunas'
-        $query_terima = "UPDATE booking SET status = 'Lunas' WHERE id_booking = ?";
+        // Update status booking menjadi 'Selesai'
+        $query_terima = "UPDATE booking SET status = 'Selesai' WHERE id_booking = ?";
 
         $stmt_terima = $conn->prepare($query_terima);
 
@@ -116,3 +116,10 @@ if (isset($_SESSION['gagal'])) {
     unset($_SESSION['gagal']);
 }
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfirmasi Pembayaran - Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
