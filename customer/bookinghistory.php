@@ -12,8 +12,8 @@
 // Aktifkan session agar bisa membaca & menulis data session
 session_start();
 
-// Cek apakah pengguna sudah login dengan memeriksa keberadaan session 'id_pengguna'
-if (!isset($_SESSION['id_pengguna'])) {
+// Cek apakah user sudah login dengan memeriksa keberadaan session 'id_user'
+if (!isset($_SESSION['id_user'])) {
     // Redirect paksa ke halaman login jika belum login
     header("Location: ../auth/login.php");
     // Hentikan eksekusi script agar kode di bawah tidak ikut berjalan
@@ -33,8 +33,8 @@ include "../config/connection.php";
 //  3. MENGAMBIL DATA RIWAYAT BOOKING (Query READ)
 // ============================================================
 
-// Ambil ID pengguna yang sedang login dari session
-$id_pengguna_login = $_SESSION['id_pengguna'];
+// Ambil ID user yang sedang login dari session
+$id_user_login = $_SESSION['id_user'];
 
 // Query SELECT dengan JOIN ke tabel lapangan
 // untuk mengambil nama_lapangan dan harga_per_jam
@@ -52,15 +52,15 @@ $query_booking = "
         l.harga_per_jam
     FROM booking b
     JOIN lapangan l ON b.id_lapangan = l.id_lapangan
-    WHERE b.id_pengguna = ?
+    WHERE b.id_user = ?
     ORDER BY b.tanggal_booking DESC
 ";
 
 // Siapkan prepared statement untuk mencegah SQL Injection
 $stmt_booking = $conn->prepare($query_booking);
 
-// Bind parameter: 'i' = integer, sesuai tipe id_pengguna di database
-$stmt_booking->bind_param("i", $id_pengguna_login);
+// Bind parameter: 'i' = integer, sesuai tipe id_user di database
+$stmt_booking->bind_param("i", $id_user_login);
 
 // Eksekusi query
 $stmt_booking->execute();
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
 
     // Ambil data file dari superglobal $_FILES
     $file        = $_FILES['bukti_transfer'];
-    $nama_file   = $file['name'];       // Nama asli file dari komputer pengguna
+    $nama_file   = $file['name'];       // Nama asli file dari komputer user
     $ukuran_file = $file['size'];       // Ukuran file dalam byte
     $tmp_file    = $file['tmp_name'];   // Path sementara file di server
     $error_file  = $file['error'];      // Kode error (0 = tidak ada error)
@@ -149,15 +149,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
                 status         = 'Menunggu Konfirmasi',
                 bukti_transfer = ?
             WHERE id_booking   = ?
-            AND   id_pengguna      = ?
+            AND   id_user      = ?
         ";
-        // Kondisi 'AND id_pengguna = ?' sebagai lapisan keamanan
-        // agar pengguna tidak bisa mengubah data booking milik orang lain
+        // Kondisi 'AND id_user = ?' sebagai lapisan keamanan
+        // agar user tidak bisa mengubah data booking milik orang lain
 
         $stmt_update = $conn->prepare($query_update);
 
-        // Bind: 's' = string (nama file), 'i' = integer (id_booking), 'i' = integer (id_pengguna)
-        $stmt_update->bind_param("sii", $nama_file_baru, $id_booking, $id_pengguna_login);
+        // Bind: 's' = string (nama file), 'i' = integer (id_booking), 'i' = integer (id_user)
+        $stmt_update->bind_param("sii", $nama_file_baru, $id_booking, $id_user_login);
 
         if ($stmt_update->execute()) {
             // Query berhasil: simpan flash message sukses
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
     }
 
     // Redirect kembali (Pola PRG: Post/Redirect/Get)
-    // Mencegah form ter-submit ulang saat pengguna menekan Refresh
+    // Mencegah form ter-submit ulang saat user menekan Refresh
     header("Location: bookinghistory.php");
     exit();
 }
@@ -199,64 +199,228 @@ if (isset($_SESSION['gagal'])) {
     $pesan_gagal = $_SESSION['gagal'];
     unset($_SESSION['gagal']);
 }
-?>
 
+// ============================================================
+//  SAMPAI SINI BACKEND SELESAI.
+//  Variabel yang tersedia untuk dipakai di HTML:
+//    $pembayaran_list  => array semua data booking user (siap di-foreach)
+//    $pesan_sukses     => string pesan sukses atau null
+//    $pesan_gagal      => string pesan gagal atau null
+// ============================================================
+?>
 <!DOCTYPE html>
 <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport"="width=device-width, initial-scale=1.0">
-        <title>Riwayat Booking — MyField</title>
-    </head>
-    <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Booking</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-// Navbar
-        <nav>
-            <strong>MyField</strong>
-            &nbsp;|&nbsp;
-            Halo, <?= htmlspecialchars($_SESSION['nama_pengguna']) ?>
-            &nbsp;|&nbsp;
-            <a href="homepage.php">Daftar Lapangan</a>
-            &nbsp;|&nbsp;
-            <a href="bookinghistory.php">Riwayat Booking</a>
-            &nbsp;|&nbsp;
-            <a href="../auth/logout.php">Logout</a>
-        </nav>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            background: #f4f4f4;
+            color: #333;
+        }
 
-        <h1>Riwayat Booking Anda</h1>
+        .container {
+            max-width: 960px;
+            margin: 30px auto;
+            padding: 0 16px;
+        }
 
-// Tampilkan pesan sukses jika ada
-        <?php if ($pesan_sukses): ?>
-            <div style="color: green;"><?= htmlspecialchars($pesan_sukses) ?></div>
-        <?php endif; ?>
+        h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: #222;
+        }
 
-// Tampilkan pesan gagal jika ada
-        <?php if ($pesan_gagal): ?>
-            <div style="color: red;"><?= htmlspecialchars($pesan_gagal) ?></div>
-        <?php endif; ?>
+        /* Alert */
+        .alert {
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger  { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-// Tampilkan tabel riwayat booking
-        <table border="1" cellpadding="10" cellspacing="0">
+        /* Tabel */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        thead th {
+            background: #3a7bd5;
+            color: #fff;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e5e5e5;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover { background: #f9f9f9; }
+
+        /* Badge status */
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-lunas    { background: #d4edda; color: #155724; }
+        .badge-menunggu { background: #fff3cd; color: #856404; }
+        .badge-ditolak  { background: #f8d7da; color: #721c24; }
+        .badge-default  { background: #e2e3e5; color: #383d41; }
+
+        /* Form upload inline */
+        .form-upload {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-upload input[type="file"] {
+            font-size: 12px;
+            max-width: 160px;
+        }
+
+        .btn {
+            padding: 5px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #3a7bd5; color: #fff; }
+        .btn-primary:hover { background: #2f66b8; }
+
+        .link-bukti {
+            color: #3a7bd5;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        .link-bukti:hover { text-decoration: underline; }
+
+        .text-muted { color: #999; font-style: italic; font-size: 12px; }
+
+        .empty-state {
+            background: #fff;
+            padding: 40px;
+            text-align: center;
+            color: #888;
+            border: 1px solid #e5e5e5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Riwayat Booking Saya</h2>
+
+    <?php if ($pesan_sukses): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($pesan_sukses) ?></div>
+    <?php endif; ?>
+
+    <?php if ($pesan_gagal): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($pesan_gagal) ?></div>
+    <?php endif; ?>
+
+    <?php if (empty($pembayaran_list)): ?>
+
+        <div class="empty-state">Kamu belum memiliki riwayat booking.</div>
+
+    <?php else: ?>
+
+        <table>
             <thead>
                 <tr>
-                    <th>ID Booking</th>
-                    <th>Nama Lapangan</th>
-                    <th>Tanggal Booking</th>
-                    <th>Jam Mulai</th>
-                    <th>Jam Selesai</th>
+                    <th>No</th>
+                    <th>Lapangan</th>
+                    <th>Tanggal</th>
+                    <th>Jam</th>
                     <th>Total Harga</th>
                     <th>Status</th>
                     <th>Bukti Transfer</th>
-                    <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
-                <?php if (count($pembayaran_list) > 0): ?>
-                    <?php foreach ($pembayaran_list as $booking): ?>
-                        <tr>
-                            <td><?= htmlspecialchars($booking['id_booking']) ?></td>
-                            <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
-                            <td><?= htmlspecialchars(date("d M Y", strtotime($booking['tanggal_booking']))) ?></td>
-                            <td><?= htmlspecialchars(date("H:i", strtotime($booking['jam_mulai']))) ?></td>
-                            <td><?= htmlspecialchars(date("H:i", strtotime($booking['jam_selesai']))) ?></td>
-                            <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td
+                <?php $no = 1; foreach ($pembayaran_list as $booking): ?>
+
+                <?php
+                    // Tentukan class badge sesuai status
+                    $status = $booking['status'];
+                    if ($status === 'Lunas') {
+                        $badge = 'badge-lunas';
+                    } elseif ($status === 'Menunggu Konfirmasi') {
+                        $badge = 'badge-menunggu';
+                    } elseif ($status === 'Ditolak') {
+                        $badge = 'badge-ditolak';
+                    } else {
+                        $badge = 'badge-default';
+                    }
+                ?>
+
+                <tr>
+                    <td><?= $no++ ?></td>
+                    <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
+                    <td><?= htmlspecialchars($booking['tanggal_booking']) ?></td>
+                    <td><?= htmlspecialchars($booking['jam_mulai']) ?> – <?= htmlspecialchars($booking['jam_selesai']) ?></td>
+                    <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td>
+                    <td><span class="badge <?= $badge ?>"><?= htmlspecialchars($status) ?></span></td>
+                    <td>
+                        <?php if (!empty($booking['bukti_transfer'])): ?>
+
+                            <!-- Bukti sudah pernah diupload: tampilkan link lihat -->
+                            <a class="link-bukti"
+                               href="../uploads/bukti_transfer/<?= htmlspecialchars($booking['bukti_transfer']) ?>"
+                               target="_blank">Lihat Bukti</a>
+
+                        <?php elseif ($booking['status'] === 'Belum Bayar'): ?>
+
+                            <!-- Belum bayar: tampilkan form upload -->
+                            <form class="form-upload"
+                                  action="bookinghistory.php"
+                                  method="POST"
+                                  enctype="multipart/form-data">
+                                <input type="hidden"
+                                       name="id_booking"
+                                       value="<?= (int) $booking['id_booking'] ?>">
+                                <input type="file"
+                                       name="bukti_transfer"
+                                       accept=".jpg,.jpeg,.png"
+                                       required>
+                                <button class="btn btn-primary"
+                                        type="submit"
+                                        name="upload_bukti">Kirim</button>
+                            </form>
+
+                        <?php else: ?>
+
+                            <span class="text-muted">—</span>
+
+                        <?php endif; ?>
+                    </td>
+                </tr>
+
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+    <?php endif; ?>
+
+</div>
+
+</body>
+</html>
