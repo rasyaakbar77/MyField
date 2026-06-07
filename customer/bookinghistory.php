@@ -1,23 +1,14 @@
 <?php
-// ============================================================
-//  FILE: customer/bookinghistory.php
-//  FUNGSI: Backend - Riwayat booking & upload bukti transfer
-// ============================================================
-
 session_start();
 
-// Proteksi halaman: redirect ke login jika belum login
 if (!isset($_SESSION['id_pengguna'])) {
     header("Location: ../auth/login.php");
     exit();
 }
 
-// Include file koneksi database, menghasilkan variabel $conn (MySQLi)
 include "../config/connection.php";
 
-// Ambil ID pengguna yang sedang login dari session
 $id_pengguna_login = $_SESSION['id_pengguna'];
-
 
 // ============================================================
 //  PROSES POST: UPLOAD BUKTI TRANSFER
@@ -25,24 +16,19 @@ $id_pengguna_login = $_SESSION['id_pengguna'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
 
-    // Ambil id_pembayaran dari form, cast ke integer untuk keamanan
     $id_pembayaran = (int) $_POST['id_pembayaran'];
+    $file          = $_FILES['bukti_transfer'];
+    $nama_file     = $file['name'];
+    $ukuran_file   = $file['size'];
+    $tmp_file      = $file['tmp_name'];
+    $error_file    = $file['error'];
 
-    // Ambil data file dari superglobal $_FILES
-    $file        = $_FILES['bukti_transfer'];
-    $nama_file   = $file['name'];
-    $ukuran_file = $file['size'];
-    $tmp_file    = $file['tmp_name'];
-    $error_file  = $file['error'];
-
-    // Validasi 1: cek error upload dari PHP
     if ($error_file !== UPLOAD_ERR_OK) {
         $_SESSION['gagal'] = "Gagal mengunggah file. Silakan coba lagi.";
         header("Location: bookinghistory.php");
         exit();
     }
 
-    // Validasi 2: cek ekstensi file (hanya jpg, jpeg, png)
     $ekstensi_file = strtolower(pathinfo($nama_file, PATHINFO_EXTENSION));
     $ekstensi_izin = ['jpg', 'jpeg', 'png'];
 
@@ -52,43 +38,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
         exit();
     }
 
-    // Validasi 3: cek ukuran file (maksimal 2MB)
-    $maks_ukuran = 2 * 1024 * 1024;
-
-    if ($ukuran_file > $maks_ukuran) {
+    if ($ukuran_file > 2 * 1024 * 1024) {
         $_SESSION['gagal'] = "Ukuran file terlalu besar. Maksimal 2MB.";
         header("Location: bookinghistory.php");
         exit();
     }
 
-    // Buat folder tujuan jika belum ada
     $folder_tujuan = __DIR__ . "/../uploads/bukti_transfer/";
     if (!is_dir($folder_tujuan)) {
         mkdir($folder_tujuan, 0755, true);
     }
 
-    // Buat nama file unik agar tidak bentrok
     $nama_file_baru = time() . '_' . uniqid() . '.' . $ekstensi_file;
     $path_tujuan    = $folder_tujuan . $nama_file_baru;
 
-    // Pindahkan file ke folder tujuan
     if (move_uploaded_file($tmp_file, $path_tujuan)) {
-
-        // Update tabel pembayaran: isi bukti_transfer dan ubah status_bayar ke 'pending'
-        // JOIN via subquery memastikan id_pembayaran benar-benar milik pengguna yang login
         $query_update = "
             UPDATE pembayaran p
             JOIN booking b ON p.id_booking = b.id_booking
-            SET
-                p.bukti_transfer = ?,
-                p.status_bayar   = 'pending'
-            WHERE p.id_pembayaran = ?
-            AND   b.id_pengguna   = ?
+            SET p.bukti_transfer = ?, p.status_bayar = 'pending'
+            WHERE p.id_pembayaran = ? AND b.id_pengguna = ?
         ";
-
         $stmt_update = $conn->prepare($query_update);
-
-        // 's' = string (nama file), 'i' = integer (id_pembayaran), 'i' = integer (id_pengguna)
         $stmt_update->bind_param("sii", $nama_file_baru, $id_pembayaran, $id_pengguna_login);
 
         if ($stmt_update->execute()) {
@@ -96,40 +67,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
         } else {
             $_SESSION['gagal'] = "Terjadi kesalahan saat memperbarui data. Silakan coba lagi.";
         }
-
         $stmt_update->close();
-
     } else {
         $_SESSION['gagal'] = "Gagal menyimpan file ke server. Hubungi administrator.";
     }
 
-    // PRG Pattern: redirect agar tidak submit ulang saat refresh
     header("Location: bookinghistory.php");
     exit();
 }
 
-
 // ============================================================
-//  QUERY READ: AMBIL RIWAYAT BOOKING MILIK PENGGUNA
+//  QUERY READ: RIWAYAT BOOKING
 // ============================================================
 
-// JOIN tiga tabel: booking + lapangan + pembayaran
-// Satu booking bisa tidak punya pembayaran, pakai LEFT JOIN ke pembayaran
 $query_booking = "
     SELECT
-        b.id_booking,
-        b.tanggal_main,
-        b.jam_mulai,
-        b.jam_selesai,
-        b.total_harga,
-        b.status_booking,
-        b.created_at,
-        l.nama_lapangan,
-        l.harga_per_jam,
-        p.id_pembayaran,
-        p.metode_bayar,
-        p.status_bayar,
-        p.bukti_transfer
+        b.id_booking, b.tanggal_main, b.jam_mulai, b.jam_selesai,
+        b.total_harga, b.status_booking, b.created_at,
+        l.nama_lapangan, l.harga_per_jam,
+        p.id_pembayaran, p.metode_bayar, p.status_bayar, p.bukti_transfer
     FROM booking b
     JOIN  lapangan   l ON b.id_lapangan  = l.id_lapangan
     LEFT JOIN pembayaran p ON b.id_booking   = p.id_booking
@@ -140,20 +96,12 @@ $query_booking = "
 $stmt_booking = $conn->prepare($query_booking);
 $stmt_booking->bind_param("i", $id_pengguna_login);
 $stmt_booking->execute();
-$result_booking = $stmt_booking->get_result();
-
-// Tampung semua baris ke dalam array, siap di-loop di HTML
+$result_booking  = $stmt_booking->get_result();
 $pembayaran_list = [];
 while ($row = $result_booking->fetch_assoc()) {
     $pembayaran_list[] = $row;
 }
-
 $stmt_booking->close();
-
-
-// ============================================================
-//  AMBIL & HAPUS FLASH MESSAGE DARI SESSION
-// ============================================================
 
 $pesan_sukses = null;
 if (isset($_SESSION['sukses'])) {
@@ -172,244 +120,207 @@ if (isset($_SESSION['gagal'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Booking</title>
+    <title>Riwayat Booking — MyField</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            background: #f4f4f4;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 0 16px;
-        }
-
-        h2 {
-            font-size: 20px;
-            margin-bottom: 16px;
-            color: #222;
-        }
-
-        /* Alert */
-        .alert {
-            padding: 10px 14px;
-            border-radius: 4px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger  { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-        /* Tabel */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-        }
-
-        thead th {
-            background: #3a7bd5;
-            color: #fff;
-            padding: 10px 12px;
-            text-align: left;
-            font-size: 13px;
-        }
-
-        tbody td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #e5e5e5;
-            vertical-align: middle;
-        }
-
-        tbody tr:hover { background: #f9f9f9; }
-
-        /* Badge status booking */
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-dikonfirmasi { background: #d4edda; color: #155724; }
-        .badge-selesai      { background: #cce5ff; color: #004085; }
-        .badge-pending      { background: #fff3cd; color: #856404; }
-        .badge-dibatalkan   { background: #f8d7da; color: #721c24; }
-        .badge-default      { background: #e2e3e5; color: #383d41; }
-
-        /* Badge status bayar */
-        .badge-lunas        { background: #d4edda; color: #155724; }
-        .badge-gagal        { background: #f8d7da; color: #721c24; }
-        .badge-belum        { background: #e2e3e5; color: #383d41; }
-
-        /* Form upload inline */
-        .form-upload {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .form-upload input[type="file"] {
-            font-size: 12px;
-            max-width: 170px;
-        }
-
-        .btn {
-            padding: 5px 12px;
-            font-size: 12px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .btn-primary { background: #3a7bd5; color: #fff; }
-        .btn-primary:hover { background: #2f66b8; }
-
-        .link-bukti {
-            color: #3a7bd5;
-            text-decoration: none;
-            font-size: 12px;
-        }
-        .link-bukti:hover { text-decoration: underline; }
-
-        .text-muted { color: #999; font-style: italic; font-size: 12px; }
-
-        .empty-state {
-            background: #fff;
-            padding: 40px;
-            text-align: center;
-            color: #888;
-            border: 1px solid #e5e5e5;
-        }
+        body { background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background-color: #212529; }
+        .sidebar .nav-link { color: rgba(255,255,255,.75); }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: #343a40; }
+        .card-table { border: none; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container-fluid">
+    <div class="row">
 
-    <h2>Riwayat Booking Saya</h2>
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3">
+            <div class="text-white text-center mb-4">
+                <h4><i class="fa-solid fa-dumbbell me-2"></i>MyField</h4>
+                <small class="text-muted">Customer Panel</small>
+            </div>
+            <hr class="text-secondary">
+            <ul class="nav flex-column gap-2">
+                <li class="nav-item">
+                    <a class="nav-link rounded p-3" href="homepage.php">
+                        <i class="fa-solid fa-table-cells-large me-2"></i> Daftar Lapangan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active rounded p-3" href="bookinghistory.php">
+                        <i class="fa-solid fa-clock-rotate-left me-2"></i> Riwayat Booking
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link rounded p-3 text-danger" href="../auth/logout.php">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
-    <?php if ($pesan_sukses): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($pesan_sukses) ?></div>
-    <?php endif; ?>
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                <h1 class="h2">Riwayat Booking</h1>
+                <span class="badge bg-secondary p-2">Halo, <?= htmlspecialchars($_SESSION['nama_pengguna']) ?></span>
+            </div>
 
-    <?php if ($pesan_gagal): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars($pesan_gagal) ?></div>
-    <?php endif; ?>
+            <?php if ($pesan_sukses): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i><?= htmlspecialchars($pesan_sukses) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
-    <?php if (empty($pembayaran_list)): ?>
+            <?php if ($pesan_gagal): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><?= htmlspecialchars($pesan_gagal) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
-        <div class="empty-state">Kamu belum memiliki riwayat booking.</div>
+            <?php if (isset($_GET['booking']) && $_GET['booking'] === 'success'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> Booking berhasil dibuat! Silakan lakukan pembayaran.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <?php endif; ?>
 
-    <?php else: ?>
+            <div class="card card-table border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fa-solid fa-list me-2 text-muted"></i> Daftar Transaksi Saya</h5>
+                </div>
+                <div class="card-body p-0">
 
-        <table>
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Lapangan</th>
-                    <th>Tgl Main</th>
-                    <th>Jam</th>
-                    <th>Total</th>
-                    <th>Status Booking</th>
-                    <th>Status Bayar</th>
-                    <th>Bukti Transfer</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php $no = 1; foreach ($pembayaran_list as $booking): ?>
+                    <?php if (empty($pembayaran_list)): ?>
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-calendar-xmark fa-2x mb-3 opacity-50"></i>
+                            <p class="mb-0">Kamu belum memiliki riwayat booking.</p>
+                        </div>
+                    <?php else: ?>
 
-                <?php
-                    // Tentukan badge class untuk status_booking
-                    switch ($booking['status_booking']) {
-                        case 'dikonfirmasi': $badge_booking = 'badge-dikonfirmasi'; break;
-                        case 'selesai':      $badge_booking = 'badge-selesai';      break;
-                        case 'pending':      $badge_booking = 'badge-pending';      break;
-                        case 'dibatalkan':   $badge_booking = 'badge-dibatalkan';   break;
-                        default:             $badge_booking = 'badge-default';
-                    }
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Lapangan</th>
+                                    <th>Tgl Main</th>
+                                    <th>Jam</th>
+                                    <th>Total</th>
+                                    <th>Status Booking</th>
+                                    <th>Status Bayar</th>
+                                    <th>Bukti Transfer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $no = 1; foreach ($pembayaran_list as $booking): ?>
 
-                    // Tentukan badge class untuk status_bayar
-                    switch ($booking['status_bayar']) {
-                        case 'lunas':       $badge_bayar = 'badge-lunas';   break;
-                        case 'pending':     $badge_bayar = 'badge-pending'; break;
-                        case 'gagal':       $badge_bayar = 'badge-gagal';   break;
-                        case 'belum_bayar': $badge_bayar = 'badge-belum';   break;
-                        default:            $badge_bayar = 'badge-default';
-                    }
-                ?>
+                                <?php
+                                    // Badge status_booking
+                                    switch ($booking['status_booking']) {
+                                        case 'dikonfirmasi':
+                                            $cls_b = 'bg-success-subtle text-success border border-success-subtle';
+                                            break;
+                                        case 'selesai':
+                                            $cls_b = 'bg-info-subtle text-info border border-info-subtle';
+                                            break;
+                                        case 'pending':
+                                            $cls_b = 'bg-warning-subtle text-warning border border-warning-subtle';
+                                            break;
+                                        case 'dibatalkan':
+                                            $cls_b = 'bg-danger-subtle text-danger border border-danger-subtle';
+                                            break;
+                                        default:
+                                            $cls_b = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                                    }
 
-                <tr>
-                    <td><?= $no++ ?></td>
-                    <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
-                    <td><?= htmlspecialchars($booking['tanggal_main']) ?></td>
-                    <td>
-                        <?= htmlspecialchars(substr($booking['jam_mulai'], 0, 5)) ?> –
-                        <?= htmlspecialchars(substr($booking['jam_selesai'], 0, 5)) ?>
-                    </td>
-                    <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td>
-                    <td>
-                        <span class="badge <?= $badge_booking ?>">
-                            <?= htmlspecialchars($booking['status_booking']) ?>
-                        </span>
-                    </td>
-                    <td>
-                        <?php if ($booking['status_bayar']): ?>
-                            <span class="badge <?= $badge_bayar ?>">
-                                <?= htmlspecialchars(str_replace('_', ' ', $booking['status_bayar'])) ?>
-                            </span>
-                        <?php else: ?>
-                            <span class="text-muted">—</span>
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <?php if (!empty($booking['bukti_transfer'])): ?>
+                                    // Badge status_bayar
+                                    switch ($booking['status_bayar']) {
+                                        case 'lunas':
+                                            $cls_p = 'bg-success-subtle text-success border border-success-subtle';
+                                            break;
+                                        case 'pending':
+                                            $cls_p = 'bg-warning-subtle text-warning border border-warning-subtle';
+                                            break;
+                                        case 'gagal':
+                                            $cls_p = 'bg-danger-subtle text-danger border border-danger-subtle';
+                                            break;
+                                        case 'belum_bayar':
+                                            $cls_p = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                                            break;
+                                        default:
+                                            $cls_p = 'bg-secondary-subtle text-secondary border border-secondary-subtle';
+                                    }
+                                ?>
 
-                            <!-- Bukti sudah diupload: tampilkan link lihat -->
-                            <a class="link-bukti"
-                               href="../uploads/bukti_transfer/<?= htmlspecialchars($booking['bukti_transfer']) ?>"
-                               target="_blank">Lihat Bukti</a>
+                                <tr>
+                                    <td><strong><?= $no++ ?></strong></td>
+                                    <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
+                                    <td><?= date('d M Y', strtotime($booking['tanggal_main'])) ?></td>
+                                    <td>
+                                        <?= substr($booking['jam_mulai'], 0, 5) ?> –
+                                        <?= substr($booking['jam_selesai'], 0, 5) ?>
+                                    </td>
+                                    <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3 py-2 text-uppercase <?= $cls_b ?>">
+                                            <?= htmlspecialchars($booking['status_booking']) ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php if ($booking['status_bayar']): ?>
+                                            <span class="badge rounded-pill px-3 py-2 text-uppercase <?= $cls_p ?>">
+                                                <?= htmlspecialchars(str_replace('_', ' ', $booking['status_bayar'])) ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="text-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($booking['bukti_transfer'])): ?>
+                                            <a href="../uploads/bukti_transfer/<?= htmlspecialchars($booking['bukti_transfer']) ?>"
+                                               target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
+                                                <i class="fa-solid fa-eye me-1"></i> Lihat
+                                            </a>
 
-                        <?php elseif (!empty($booking['id_pembayaran']) && $booking['status_bayar'] === 'belum_bayar'): ?>
+                                        <?php elseif (!empty($booking['id_pembayaran']) && $booking['status_bayar'] === 'belum_bayar'): ?>
+                                            <form action="bookinghistory.php" method="POST"
+                                                  enctype="multipart/form-data"
+                                                  class="d-flex align-items-center gap-2 flex-wrap">
+                                                <input type="hidden" name="id_pembayaran"
+                                                       value="<?= (int) $booking['id_pembayaran'] ?>">
+                                                <input type="file" name="bukti_transfer"
+                                                       accept=".jpg,.jpeg,.png" required
+                                                       class="form-control form-control-sm" style="max-width:180px;">
+                                                <button type="submit" name="upload_bukti"
+                                                        class="btn btn-primary btn-sm rounded-pill">
+                                                    <i class="fa-solid fa-upload me-1"></i> Kirim
+                                                </button>
+                                            </form>
 
-                            <!-- Ada data pembayaran tapi belum upload bukti: tampilkan form upload -->
-                            <form class="form-upload"
-                                  action="bookinghistory.php"
-                                  method="POST"
-                                  enctype="multipart/form-data">
-                                <input type="hidden"
-                                       name="id_pembayaran"
-                                       value="<?= (int) $booking['id_pembayaran'] ?>">
-                                <input type="file"
-                                       name="bukti_transfer"
-                                       accept=".jpg,.jpeg,.png"
-                                       required>
-                                <button class="btn btn-primary"
-                                        type="submit"
-                                        name="upload_bukti">Kirim</button>
-                            </form>
+                                        <?php else: ?>
+                                            <span class="text-muted small">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
 
-                        <?php else: ?>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <span class="text-muted">—</span>
-
-                        <?php endif; ?>
-                    </td>
-                </tr>
-
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-
-    <?php endif; ?>
-
+                    <?php endif; ?>
+                </div>
+            </div>
+        </main>
+    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
