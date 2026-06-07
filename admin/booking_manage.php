@@ -2,6 +2,8 @@
 include '../config/connection.php';
 session_start();
 
+//razan tai
+
 // Proteksi halaman: hanya admin dan pemilik
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'pemilik'])) {
     header("Location: ../auth/login.php");
