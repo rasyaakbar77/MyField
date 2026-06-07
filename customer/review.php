@@ -122,10 +122,10 @@ if (isset($_POST['kirim_ulasan'])) {
         <select name="rating" required>
             <option value="">-- Pilih Rating --</option>
             <option value="5">⭐⭐⭐⭐⭐ — Sangat Bagus (5)</option>
-            <option value="4">⭐⭐⭐⭐ — Bagus (4)</option>
-            <option value="3">⭐⭐⭐ — Cukup (3)</option>
-            <option value="2">⭐⭐ — Kurang (2)</option>
-            <option value="1">⭐ — Sangat Kurang (1)</option>
+            <option value="4">⭐⭐⭐⭐ - Bagus (4)</option>
+            <option value="3">⭐⭐⭐ - Biasa (3)</option>
+            <option value="2">⭐⭐ - Kurang (2)</option>
+            <option value="1">⭐ - Buruk (1)</option>
         </select>
 
         <br><br>
