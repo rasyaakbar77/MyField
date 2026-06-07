@@ -12,8 +12,8 @@
 // Aktifkan session agar bisa membaca & menulis data session
 session_start();
 
-// Cek apakah user sudah login dengan memeriksa keberadaan session 'id_user'
-if (!isset($_SESSION['id_user'])) {
+// Cek apakah pengguna sudah login dengan memeriksa keberadaan session 'id_pengguna'
+if (!isset($_SESSION['id_pengguna'])) {
     // Redirect paksa ke halaman login jika belum login
     header("Location: ../auth/login.php");
     // Hentikan eksekusi script agar kode di bawah tidak ikut berjalan
@@ -33,8 +33,8 @@ include "../config/connection.php";
 //  3. MENGAMBIL DATA RIWAYAT BOOKING (Query READ)
 // ============================================================
 
-// Ambil ID user yang sedang login dari session
-$id_user_login = $_SESSION['id_user'];
+// Ambil ID pengguna yang sedang login dari session
+$id_pengguna_login = $_SESSION['id_pengguna'];
 
 // Query SELECT dengan JOIN ke tabel lapangan
 // untuk mengambil nama_lapangan dan harga_per_jam
@@ -52,15 +52,15 @@ $query_booking = "
         l.harga_per_jam
     FROM booking b
     JOIN lapangan l ON b.id_lapangan = l.id_lapangan
-    WHERE b.id_user = ?
+    WHERE b.id_pengguna = ?
     ORDER BY b.tanggal_booking DESC
 ";
 
 // Siapkan prepared statement untuk mencegah SQL Injection
 $stmt_booking = $conn->prepare($query_booking);
 
-// Bind parameter: 'i' = integer, sesuai tipe id_user di database
-$stmt_booking->bind_param("i", $id_user_login);
+// Bind parameter: 'i' = integer, sesuai tipe id_pengguna di database
+$stmt_booking->bind_param("i", $id_pengguna_login);
 
 // Eksekusi query
 $stmt_booking->execute();
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
 
     // Ambil data file dari superglobal $_FILES
     $file        = $_FILES['bukti_transfer'];
-    $nama_file   = $file['name'];       // Nama asli file dari komputer user
+    $nama_file   = $file['name'];       // Nama asli file dari komputer pengguna
     $ukuran_file = $file['size'];       // Ukuran file dalam byte
     $tmp_file    = $file['tmp_name'];   // Path sementara file di server
     $error_file  = $file['error'];      // Kode error (0 = tidak ada error)
@@ -149,15 +149,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
                 status         = 'Menunggu Konfirmasi',
                 bukti_transfer = ?
             WHERE id_booking   = ?
-            AND   id_user      = ?
+            AND   id_pengguna      = ?
         ";
-        // Kondisi 'AND id_user = ?' sebagai lapisan keamanan
-        // agar user tidak bisa mengubah data booking milik orang lain
+        // Kondisi 'AND id_pengguna = ?' sebagai lapisan keamanan
+        // agar pengguna tidak bisa mengubah data booking milik orang lain
 
         $stmt_update = $conn->prepare($query_update);
 
-        // Bind: 's' = string (nama file), 'i' = integer (id_booking), 'i' = integer (id_user)
-        $stmt_update->bind_param("sii", $nama_file_baru, $id_booking, $id_user_login);
+        // Bind: 's' = string (nama file), 'i' = integer (id_booking), 'i' = integer (id_pengguna)
+        $stmt_update->bind_param("sii", $nama_file_baru, $id_booking, $id_pengguna_login);
 
         if ($stmt_update->execute()) {
             // Query berhasil: simpan flash message sukses
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_bukti'])) {
     }
 
     // Redirect kembali (Pola PRG: Post/Redirect/Get)
-    // Mencegah form ter-submit ulang saat user menekan Refresh
+    // Mencegah form ter-submit ulang saat pengguna menekan Refresh
     header("Location: bookinghistory.php");
     exit();
 }
@@ -199,12 +199,64 @@ if (isset($_SESSION['gagal'])) {
     $pesan_gagal = $_SESSION['gagal'];
     unset($_SESSION['gagal']);
 }
-
-// ============================================================
-//  SAMPAI SINI BACKEND SELESAI.
-//  Variabel yang tersedia untuk dipakai di HTML:
-//    $pembayaran_list  => array semua data booking user (siap di-foreach)
-//    $pesan_sukses     => string pesan sukses atau null
-//    $pesan_gagal      => string pesan gagal atau null
-// ============================================================
 ?>
+
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"="width=device-width, initial-scale=1.0">
+        <title>Riwayat Booking — MyField</title>
+    </head>
+    <body>
+
+        <!-- Navbar -->
+        <nav>
+            <strong>MyField</strong>
+            &nbsp;|&nbsp;
+            Halo, <?= htmlspecialchars($_SESSION['nama_pengguna']) ?>
+            &nbsp;|&nbsp;
+            <a href="homepage.php">Daftar Lapangan</a>
+            &nbsp;|&nbsp;
+            <a href="bookinghistory.php">Riwayat Booking</a>
+            &nbsp;|&nbsp;
+            <a href="../auth/logout.php">Logout</a>
+        </nav>
+
+        <h1>Riwayat Booking Anda</h1>
+
+        <!-- Tampilkan pesan sukses jika ada -->
+        <?php if ($pesan_sukses): ?>
+            <div style="color: green;"><?= htmlspecialchars($pesan_sukses) ?></div>
+        <?php endif; ?>
+
+        <!-- Tampilkan pesan gagal jika ada -->
+        <?php if ($pesan_gagal): ?>
+            <div style="color: red;"><?= htmlspecialchars($pesan_gagal) ?></div>
+        <?php endif; ?>
+
+        <!-- Tabel riwayat booking -->
+        <table border="1" cellpadding="10" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>ID Booking</th>
+                    <th>Nama Lapangan</th>
+                    <th>Tanggal Booking</th>
+                    <th>Jam Mulai</th>
+                    <th>Jam Selesai</th>
+                    <th>Total Harga</th>
+                    <th>Status</th>
+                    <th>Bukti Transfer</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (count($pembayaran_list) > 0): ?>
+                    <?php foreach ($pembayaran_list as $booking): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($booking['id_booking']) ?></td>
+                            <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
+                            <td><?= htmlspecialchars(date("d M Y", strtotime($booking['tanggal_booking']))) ?></td>
+                            <td><?= htmlspecialchars(date("H:i", strtotime($booking['jam_mulai']))) ?></td>
+                            <td><?= htmlspecialchars(date("H:i", strtotime($booking['jam_selesai']))) ?></td>
+                            <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td
