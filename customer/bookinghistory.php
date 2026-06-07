@@ -38,11 +38,11 @@ $id_user_login = $_SESSION['id_pengguna'];
 
 // Query SELECT dengan JOIN ke tabel lapangan
 // untuk mengambil nama_lapangan dan harga_per_jam
-// Diurutkan berdasarkan tanggal_booking terbaru (DESC)
+// Diurutkan berdasarkan created_at terbaru (DESC)
 $query_booking = "
     SELECT
         b.id_booking,
-        b.tanggal_booking,
+        b.created_at,
         b.jam_mulai,
         b.jam_selesai,
         b.total_harga,
@@ -53,7 +53,7 @@ $query_booking = "
     FROM booking b
     JOIN lapangan l ON b.id_lapangan = l.id_lapangan
     WHERE b.id_user = ?
-    ORDER BY b.tanggal_booking DESC
+    ORDER BY b.created_at DESC
 ";
 
 // Siapkan prepared statement untuk mencegah SQL Injection
@@ -375,7 +375,7 @@ if (isset($_SESSION['gagal'])) {
                 <tr>
                     <td><?= $no++ ?></td>
                     <td><?= htmlspecialchars($booking['nama_lapangan']) ?></td>
-                    <td><?= htmlspecialchars($booking['tanggal_booking']) ?></td>
+                    <td><?= htmlspecialchars($booking['created_at']) ?></td>
                     <td><?= htmlspecialchars($booking['jam_mulai']) ?> – <?= htmlspecialchars($booking['jam_selesai']) ?></td>
                     <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?></td>
                     <td><span class="badge <?= $badge ?>"><?= htmlspecialchars($status) ?></span></td>
