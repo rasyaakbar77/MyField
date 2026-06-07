@@ -1,18 +1,14 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'pemilik'])) {
     header("Location: ../auth/login.php");
     exit();
 }
 
 include "../config/connection.php";
 
-$query_pendapatan = "
-    SELECT COALESCE(SUM(total_harga), 0) AS total_pendapatan
-    FROM booking
-    WHERE status = 'Lunas'
-";
+$query_pendapatan = "SELECT COALESCE(SUM(jumlah_bayar), 0) AS total_pendapatan FROM pembayaran WHERE status_bayar = 'lunas'";
 $result_pendapatan = $conn->query($query_pendapatan);
 $row_pendapatan    = $result_pendapatan->fetch_assoc();
 $total_pendapatan  = $row_pendapatan['total_pendapatan'];
@@ -22,12 +18,12 @@ $result_lapangan = $conn->query($query_lapangan);
 $row_lapangan = $result_lapangan->fetch_assoc();
 $jumlah_lapangan = $row_lapangan['jumlah_lapangan'];
 
-$query_pending = "SELECT COUNT(*) AS jumlah_pending FROM booking WHERE status = 'Menunggu Konfirmasi'";
+$query_pending = "SELECT COUNT(*) AS jumlah_pending FROM pembayaran WHERE status_bayar = 'pending'";
 $result_pending = $conn->query($query_pending);
 $row_pending = $result_pending->fetch_assoc();
 $jumlah_booking_pending = $row_pending['jumlah_pending'];
 
-$query_customer = "SELECT COUNT(*) AS jumlah_customer FROM user WHERE role = 'customer'";
+$query_customer = "SELECT COUNT(*) AS jumlah_customer FROM pengguna WHERE role = 'customer'";
 $result_customer = $conn->query($query_customer);
 $row_customer = $result_customer->fetch_assoc();
 $jumlah_customer = $row_customer['jumlah_customer'];
@@ -35,15 +31,15 @@ $jumlah_customer = $row_customer['jumlah_customer'];
 $query_recent = "
     SELECT
         b.id_booking,
-        b.tanggal_booking,
+        b.tanggal_main,
         b.jam_mulai,
         b.jam_selesai,
         b.total_harga,
-        b.status,
-        u.nama        AS nama_customer,
+        b.status_booking,
+        u.nama_pengguna,
         l.nama_lapangan
     FROM booking b
-    JOIN user     u ON b.id_user     = u.id_user
+    JOIN pengguna u ON b.id_pengguna = u.id_pengguna
     JOIN lapangan l ON b.id_lapangan = l.id_lapangan
     ORDER BY b.id_booking DESC
     LIMIT 5
@@ -71,7 +67,7 @@ if (isset($_SESSION['sukses'])) {
     <style>
         body { background-color: #f8f9fa; }
         .sidebar { min-height: 100vh; background-color: #212529; }
-        .sidebar .nav-link { color: #rgba(255,255,255,.75); }
+        .sidebar .nav-link { color: rgba(255,255,255,.75); }
         .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: #343a40; }
         .card-stat { border: none; border-radius: 10px; transition: transform 0.2s; }
         .card-stat:hover { transform: translateY(-5px); }
@@ -109,7 +105,7 @@ if (isset($_SESSION['sukses'])) {
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
                 <h1 class="h2">Dashboard</h1>
-                <span class="badge bg-secondary p-2">Halo, Admin</span>
+                <span class="badge bg-secondary p-2">Halo, <?= htmlspecialchars($_SESSION['nama_pengguna']); ?></span>
             </div>
 
             <?php if ($pesan_sukses): ?>
@@ -146,7 +142,7 @@ if (isset($_SESSION['sukses'])) {
                     <div class="card card-stat bg-warning text-dark p-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="text-uppercase mb-1">Pending Booking</h6>
+                                <h6 class="text-uppercase mb-1">Pending Bayar</h6>
                                 <h4 class="mb-0"><?= $jumlah_booking_pending; ?></h4>
                             </div>
                             <i class="fa-solid fa-clock fa-2x opacity-50"></i>
@@ -178,7 +174,7 @@ if (isset($_SESSION['sukses'])) {
                                     <th>ID</th>
                                     <th>Customer</th>
                                     <th>Lapangan</th>
-                                    <th>Tanggal</th>
+                                    <th>Tanggal Main</th>
                                     <th>Jam</th>
                                     <th>Total Harga</th>
                                     <th>Status</th>
@@ -187,24 +183,24 @@ if (isset($_SESSION['sukses'])) {
                             <tbody>
                                 <?php if (empty($recent_bookings)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">Belum ada data transaksi transaksi masuk.</td>
+                                        <td colspan="7" class="text-center py-4 text-muted">Belum ada data transaksi masuk.</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($recent_bookings as $booking): ?>
                                         <tr>
                                             <td><strong>#<?= $booking['id_booking']; ?></strong></td>
-                                            <td><?= htmlspecialchars($booking['nama_customer']); ?></td>
+                                            <td><?= htmlspecialchars($booking['nama_pengguna']); ?></td>
                                             <td><?= htmlspecialchars($booking['nama_lapangan']); ?></td>
-                                            <td><?= date('d M Y', strtotime($booking['tanggal_booking'])); ?></td>
+                                            <td><?= date('d M Y', strtotime($booking['tanggal_main'])); ?></td>
                                             <td><?= substr($booking['jam_mulai'], 0, 5); ?> - <?= substr($booking['jam_selesai'], 0, 5); ?></td>
                                             <td>Rp <?= number_format($booking['total_harga'], 0, ',', '.'); ?></td>
                                             <td>
-                                                <?php if ($booking['status'] === 'Lunas' || $booking['status'] === 'Dikonfirmasi'): ?>
-                                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">Lunas</span>
-                                                <?php elseif ($booking['status'] === 'Menunggu Konfirmasi' || $booking['status'] === 'Pending'): ?>
-                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2">Pending</span>
+                                                <?php if ($booking['status_booking'] === 'selesai' || $booking['status_booking'] === 'dikonfirmasi'): ?>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 text-uppercase"><?= $booking['status_booking']; ?></span>
+                                                <?php elseif ($booking['status_booking'] === 'pending'): ?>
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-2 text-uppercase">Pending</span>
                                                 <?php else: ?>
-                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2"><?= htmlspecialchars($booking['status']); ?></span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 text-uppercase"><?= $booking['status_booking']; ?></span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
