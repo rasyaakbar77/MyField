@@ -12,8 +12,8 @@
 // Aktifkan session agar bisa membaca & menulis data session
 session_start();
 
-// Cek apakah user sudah login dengan memeriksa keberadaan session 'id_user'
-if (!isset($_SESSION['id_user'])) {
+// Cek apakah user sudah login dengan memeriksa keberadaan session 'id_pengguna'
+if (!isset($_SESSION['id_pengguna'])) {
     // Redirect paksa ke halaman login jika belum login
     header("Location: ../auth/login.php");
     // Hentikan eksekusi script agar kode di bawah tidak ikut berjalan
@@ -34,7 +34,7 @@ include "../config/connection.php";
 // ============================================================
 
 // Ambil ID user yang sedang login dari session
-$id_user_login = $_SESSION['id_user'];
+$id_user_login = $_SESSION['id_pengguna'];
 
 // Query SELECT dengan JOIN ke tabel lapangan
 // untuk mengambil nama_lapangan dan harga_per_jam
