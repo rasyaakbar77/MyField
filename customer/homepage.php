@@ -107,43 +107,48 @@ if (!empty($filter)) {
                 <div class="row g-4">
                     <?php while ($lapangan = mysqli_fetch_assoc($result)): ?>
                     <div class="col-12 col-sm-6 col-xl-4">
-                        <div class="card card-lapangan shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h5 class="card-title mb-0 fw-bold"><?= htmlspecialchars($lapangan['nama_lapangan']) ?></h5>
-                                    <?php if ($lapangan['status'] === 'tersedia'): ?>
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle badge-olahraga rounded-pill px-2">Tersedia</span>
-                                    <?php elseif ($lapangan['status'] === 'pemeliharaan'): ?>
-                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle badge-olahraga rounded-pill px-2">Pemeliharaan</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle badge-olahraga rounded-pill px-2">Tidak Tersedia</span>
-                                    <?php endif; ?>
-                                </div>
-
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-olahraga mb-3">
-                                    <i class="fa-solid fa-tag me-1"></i><?= htmlspecialchars($lapangan['jenis_olahraga']) ?>
-                                </span>
-
-                                <p class="text-muted small mb-3"><?= htmlspecialchars($lapangan['deskripsi']) ?></p>
-
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="text-muted small">Harga / Jam</span>
-                                        <div class="fw-bold text-dark">Rp <?= number_format($lapangan['harga_per_jam'], 0, ',', '.') ?></div>
+                        
+                        <!-- BUNGKUS DENGAN TAG <a> UNTUK MENUJU DETAIL LAPANGAN -->
+                        <a href="detail_lapangan.php?id=<?= $lapangan['id_lapangan'] ?>" class="text-decoration-none text-dark d-block h-100">
+                            <div class="card card-lapangan shadow-sm h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title mb-0 fw-bold"><?= htmlspecialchars($lapangan['nama_lapangan']) ?></h5>
+                                        <?php if ($lapangan['status'] === 'tersedia'): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle badge-olahraga rounded-pill px-2">Tersedia</span>
+                                        <?php elseif ($lapangan['status'] === 'pemeliharaan'): ?>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle badge-olahraga rounded-pill px-2">Pemeliharaan</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle badge-olahraga rounded-pill px-2">Tidak Tersedia</span>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php if ($lapangan['status'] === 'tersedia'): ?>
-                                        <a href="bookingform.php?id=<?= $lapangan['id_lapangan'] ?>"
-                                           class="btn btn-primary btn-sm rounded-pill px-3">
-                                            <i class="fa-solid fa-calendar-plus me-1"></i> Booking
-                                        </a>
-                                    <?php else: ?>
-                                        <button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>
-                                            <i class="fa-solid fa-ban me-1"></i> Tidak Tersedia
-                                        </button>
-                                    <?php endif; ?>
+
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle badge-olahraga mb-3">
+                                        <i class="fa-solid fa-tag me-1"></i><?= htmlspecialchars($lapangan['jenis_olahraga']) ?>
+                                    </span>
+
+                                    <p class="text-muted small mb-3"><?= htmlspecialchars($lapangan['deskripsi']) ?></p>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="text-muted small">Harga / Jam</span>
+                                            <div class="fw-bold text-dark">Rp <?= number_format($lapangan['harga_per_jam'], 0, ',', '.') ?></div>
+                                        </div>
+                                        <!-- Tombol diubah menjadi span agar tidak error saat dibungkus tag <a> -->
+                                        <?php if ($lapangan['status'] === 'tersedia'): ?>
+                                            <span class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                                <i class="fa-solid fa-eye me-1"></i> Detail
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="btn btn-secondary btn-sm rounded-pill px-3 opacity-75">
+                                                <i class="fa-solid fa-ban me-1"></i> Tutup
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
+
                     </div>
                     <?php endwhile; ?>
                 </div>
