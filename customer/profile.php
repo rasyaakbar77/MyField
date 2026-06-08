@@ -216,7 +216,7 @@ $stats = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt4));
 
     <!-- Info akun (read-only) -->
     <div class="section-card">
-        <div class="section-title">📋 Informasi Akun</div>
+        <div class="section-title"> Informasi Akun</div>
         <div class="info-row">
             <div class="info-key">Email</div>
             <div class="info-val"><?= htmlspecialchars($user['email']) ?></div>
@@ -239,7 +239,7 @@ $stats = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt4));
 
     <!-- Form edit profil -->
     <div class="section-card">
-        <div class="section-title">✏️ Edit Profil</div>
+        <div class="section-title"> Edit Profil</div>
 
         <?php if ($error_profil !== ''): ?>
         <div class="alert alert-danger py-2 small">⚠ <?= htmlspecialchars($error_profil) ?></div>
@@ -272,7 +272,7 @@ $stats = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt4));
 
     <!-- Form ganti password -->
     <div class="section-card">
-        <div class="section-title">🔒 Ganti Password</div>
+        <div class="section-title"> Ganti Password</div>
 
         <?php if ($error_password !== ''): ?>
         <div class="alert alert-danger py-2 small">⚠ <?= htmlspecialchars($error_password) ?></div>
