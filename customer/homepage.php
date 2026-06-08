@@ -68,6 +68,11 @@ if (!empty($filter)) {
                         <i class="fa-solid fa-clock-rotate-left me-2"></i> Riwayat Booking
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link rounded p-3" href="profile.php">
+                        <i class="fa-solid fa-circle-user me-2"></i> Profil Saya
+                    </a>
+                </li>
                 <li class="nav-item mt-4">
                     <a class="nav-link rounded p-3 text-danger" href="../auth/logout.php">
                         <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
